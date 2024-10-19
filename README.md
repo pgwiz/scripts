@@ -8,9 +8,13 @@ You can download the installation script using the following command:
 
 ```bash
 wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/django_scripts/git_pull.sh -O install_s5.sh
+```
 
-### Step 3: Save and Exit
+### Step 2: Install
 
+```bash
+bash install_s5.sh
+```
 
 ### Step 3: Save and Exit
 
