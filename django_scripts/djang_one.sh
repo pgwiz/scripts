@@ -47,7 +47,9 @@ echo "Current repository path: $repo_path"
 
 # Collect static files
 python3 manage.py collectstatic --noinput || { echo "Failed to collect static files"; exit 1; }
-
+python3 manage.py create_groups
+python3 manage.py makemigrations
+python3 manage.py migrate 
 # Create configuration directory
 mkdir -p conf
 
