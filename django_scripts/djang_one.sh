@@ -3,7 +3,7 @@
 # Get the VPS IP
 vps_ip=$(curl -s http://ipinfo.io/ip)
 sudo hostnamectl set-hostname "$vps_ip"
-port_number=8004
+port_number=80
 
 # Install Git
 sudo apt install git -y || { echo "Failed to install Git"; exit 1; }
