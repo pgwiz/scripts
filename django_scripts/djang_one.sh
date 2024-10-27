@@ -7,7 +7,7 @@ port_number=80
 
 # Install Git
 sudo apt update && sudo apt upgrade -y
-sudo apt instqll python3.12-venv
+sudo apt install python3.12-venv
 sudo apt install git -y || { echo "Failed to install Git"; exit 1; }
 
 # Prompt the user for input
