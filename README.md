@@ -8,25 +8,21 @@
 - You can download the installation script for Django and Gunicorn using the following command:
 
 ```bash
-wget --no-check-certificate 
-https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/djang_one.sh -O django.sh && bash django.sh
+wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/djang_one.sh -O django.sh && bash django.sh
 ```
 
 # Step 2: Install SSL Certificate
 - After setting up Django, you can install the SSL certificate on your domain with the following command:
 
 ```bash
-wget --no-check-certificate
-https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/domain_ssl.sh -O ssl_cert.sh && bash ssl_cert.sh
+wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/domain_ssl.sh -O ssl_cert.sh && bash ssl_cert.sh
 ```
 
 # Step 3: Perform Git Pull
 - Finally, you can update your repository by running the following command:
 
 ```bash
-wget --no-check-certificate
-
-https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/git_pull.sh -O git_pull.sh && bash git_pull.sh
+wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/git_pull.sh -O git_pull.sh && bash git_pull.sh
 ```
 - Summary
 - Step 1: Installs Django and Gunicorn.
