@@ -185,6 +185,7 @@ EOL"
         echo "Nginx configuration for $project_name has been set up."
     else
         echo "Nginx configuration test failed. Please check the configuration."
+        exit 1
     fi
 }
 
@@ -200,3 +201,5 @@ create_gunicorn_config
 get_domain_name
 run_gunicorn
 setup_nginx
+
+echo "Setup complete."
