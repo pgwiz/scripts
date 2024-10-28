@@ -4,7 +4,7 @@
 read -p "Please enter the project name: " project_name
 nginx_config="/etc/nginx/sites-available/$project_name"  # Nginx config file path
 vps_ip=$(curl -s http://ipinfo.io/ip)                    # Get the VPS IP
-port_number=80                                        # Change if necessary
+port_number=8000                                       # Change if necessary
 
 # Prompt for domain input
 read -p "Please enter the domain name: " dm_name
