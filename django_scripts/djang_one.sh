@@ -9,26 +9,39 @@ function set_hostname() {
     port_number=80  # Change to 80 for privileged port
 }
 
+# Function to check if Python 3.12.0 is installed
+function check_python() {
+    if ! command -v python3.12 &> /dev/null; then
+        echo "Python 3.12.0 is not installed. Installing now..."
+        install_python
+    else
+        echo "Python 3.12.0 is already installed."
+    fi
+}
+
+# Function to install Python 3.12 using pyenv
+function install_python() {
+    # Install necessary dependencies for pyenv
+    sudo apt install -y build-essential libssl-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libffi-dev zlib1g-dev python3-openssl git
+
+    # Install pyenv
+    curl https://pyenv.run | bash
+
+    # Add pyenv to your shell startup script
+    echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.bashrc
+    echo 'eval "$(pyenv init --path)"' >> ~/.bashrc
+    echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+    echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.bashrc
+    source ~/.bashrc
+
+    # Install Python 3.12 using pyenv
+    pyenv install 3.12.0
+    pyenv global 3.12.0
+}
+
 # Function to install necessary packages
 function install_packages() {
     sudo apt update && sudo apt upgrade -y
-    # Install necessary dependencies for pyenv (without update)
-sudo apt install -y build-essential libssl-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libffi-dev zlib1g-dev python3-openssl git
-
-# Install pyenv
-curl https://pyenv.run | bash
-
-# Add pyenv to your shell startup script
-echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.bashrc
-echo 'eval "$(pyenv init --path)"' >> ~/.bashrc
-echo 'eval "$(pyenv init -)"' >> ~/.bashrc
-echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.bashrc
-source ~/.bashrc
-
-# Install Python 3.12 using pyenv
-pyenv install 3.12.0
-pyenv global 3.12.0
-
     sudo apt install git authbind -y
 }
 
@@ -113,7 +126,6 @@ function run_gunicorn() {
 }
 
 # Function to create and test Nginx configuration
-# Function to create and test Nginx configuration
 function setup_nginx() {
     local nginx_config="/etc/nginx/sites-available/$project_name"
     local ssl_cert="/etc/letsencrypt/live/$dm_name/fullchain.pem"
@@ -176,9 +188,9 @@ EOL"
     fi
 }
 
-
 # Main script execution
 set_hostname
+check_python
 install_packages
 setup_authbind
 prompt_user_input
