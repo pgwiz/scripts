@@ -5,7 +5,7 @@ set -e  # Exit on error
 # Get the VPS IP and set hostname
 vps_ip=$(curl -s http://ipinfo.io/ip)
 sudo hostnamectl set-hostname "$vps_ip"
-port_number=80  # Change to 80 for privileged port
+port_number=8004  # Update to the port Gunicorn will use
 
 # Install necessary packages
 sudo apt update && sudo apt upgrade -y
@@ -53,13 +53,6 @@ python3 manage.py migrate
 mkdir -p conf
 repo_path=$(pwd)
 
-cat <<EOL > conf/gunicorn_config.py
-command='${repo_path}/django_env/bin/gunicorn'
-pythonpath='${repo_path}/${project_name}'
-bind='${vps_ip}:${port_number}'
-workers=3
-EOL
-
 # Get domain name from user
 read -p "Did you point any domain? (yes/no): " user_input
 if [[ "$user_input" == "yes" ]]; then
@@ -83,7 +76,7 @@ User=$USER
 Group=www-data
 WorkingDirectory=$repo_path
 Environment='PATH=$repo_path/django_env/bin'
-ExecStart=$repo_path/django_env/bin/gunicorn --access-logfile - --workers 3 --bind ${vps_ip}:${port_number} ${project_name}.wsgi:application
+ExecStart=$repo_path/django_env/bin/gunicorn --access-logfile - --workers 3 --bind 127.0.0.1:${port_number} ${project_name}.wsgi:application
 
 [Install]
 WantedBy=multi-user.target
@@ -100,16 +93,8 @@ sudo systemctl start "gunicorn_$project_name.service"
 
 echo "Gunicorn service for $project_name has been created and started."
 
-# Create and test Nginx configuration
+# Create Nginx configuration using the provided template
 nginx_config="/etc/nginx/sites-available/$project_name"
-ssl_cert="/etc/letsencrypt/live/$dm_name/fullchain.pem"
-ssl_key="/etc/letsencrypt/live/$dm_name/privkey.pem"
-static_root="/root/ctrack/staticfiles_build/static/"  # Adjust if needed
-
-if [ -L "/etc/nginx/sites-enabled/$project_name" ]; then
-    sudo rm "/etc/nginx/sites-enabled/$project_name"
-    echo "Removed existing symbolic link for $project_name."
-fi
 
 sudo bash -c "cat <<EOL > $nginx_config
 server {
@@ -121,12 +106,12 @@ server {
 }
 
 server {
-    listen 443 ssl;
+    listen 443 ssl;  # Listen on port 443 for HTTPS
     listen [::]:443 ssl;
     server_name $dm_name www.$dm_name;
 
-    ssl_certificate $ssl_cert;
-    ssl_certificate_key $ssl_key;
+    ssl_certificate /etc/letsencrypt/live/$dm_name/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$dm_name/privkey.pem;
 
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384';
@@ -147,13 +132,15 @@ server {
     }
 
     location /static/ {
-        alias $static_root;  # Serving static files
+        root $static_root;  # Serving static files
     }
 }
 EOL"
 
+# Enable the Nginx configuration
 sudo ln -s "$nginx_config" /etc/nginx/sites-enabled/
 
+# Test and reload Nginx configuration
 if sudo nginx -t; then
     sudo systemctl reload nginx
     echo "Nginx configuration for $project_name has been set up."
