@@ -12,7 +12,7 @@ function set_hostname() {
 # Function to install necessary packages
 function install_packages() {
     sudo apt update && sudo apt upgrade -y
-    sudo apt install python3.12-venv git authbind -y
+    sudo apt install git authbind -y
 }
 
 # Function to setup authbind for port 80
