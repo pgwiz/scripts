@@ -12,6 +12,23 @@ function set_hostname() {
 # Function to install necessary packages
 function install_packages() {
     sudo apt update && sudo apt upgrade -y
+    # Install necessary dependencies for pyenv (without update)
+sudo apt install -y build-essential libssl-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libffi-dev zlib1g-dev python3-openssl git
+
+# Install pyenv
+curl https://pyenv.run | bash
+
+# Add pyenv to your shell startup script
+echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.bashrc
+echo 'eval "$(pyenv init --path)"' >> ~/.bashrc
+echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.bashrc
+source ~/.bashrc
+
+# Install Python 3.12 using pyenv
+pyenv install 3.12.0
+pyenv global 3.12.0
+
     sudo apt install git authbind -y
 }
 
