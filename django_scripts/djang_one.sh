@@ -9,10 +9,7 @@ port_number=80  # Change to 80 for privileged port
 
 # Install necessary packages
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y build-essential libssl-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libffi-dev zlib1g-dev python3-openssl git authbind
-
-# Install necessary Python packages
-sudo apt install python3-venv python3-pip -y
+sudo apt install -y build-essential libssl-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libffi-dev zlib1g-dev python3-openssl git authbind python3-venv python3-pip
 
 # Setup authbind for port 80
 sudo touch /etc/authbind/byport/80
