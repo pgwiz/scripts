@@ -12,11 +12,6 @@ function set_hostname() {
 # Function to install necessary packages
 function install_packages() {
     sudo apt update && sudo apt upgrade -y
-    sudo apt install software-properties-common
-    sudo add-apt-repository ppa:deadsnakes/ppa
-    sudo apt update
-    sudo apt install python3.12
-
     sudo apt install git authbind -y
 }
 
