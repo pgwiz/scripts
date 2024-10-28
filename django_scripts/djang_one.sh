@@ -7,33 +7,12 @@ vps_ip=$(curl -s http://ipinfo.io/ip)
 sudo hostnamectl set-hostname "$vps_ip"
 port_number=80  # Change to 80 for privileged port
 
-# Check if Python 3.12.0 is installed
-if ! command -v python3.12 &> /dev/null; then
-    echo "Python 3.12.0 is not installed. Installing now..."
-    
-    # Install necessary dependencies for pyenv
-    sudo apt update && sudo apt upgrade -y
-    sudo apt install -y build-essential libssl-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libffi-dev zlib1g-dev python3-openssl git
-
-    # Install pyenv
-    curl https://pyenv.run | bash
-
-    # Add pyenv to your shell startup script
-    echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.bashrc
-    echo 'eval "$(pyenv init --path)"' >> ~/.bashrc
-    echo 'eval "$(pyenv init -)"' >> ~/.bashrc
-    echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.bashrc
-    source ~/.bashrc
-
-    # Install Python 3.12 using pyenv
-    pyenv install 3.12.0
-    pyenv global 3.12.0
-else
-    echo "Python 3.12.0 is already installed."
-fi
-
 # Install necessary packages
-sudo apt install git authbind -y
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y build-essential libssl-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libffi-dev zlib1g-dev python3-openssl git authbind
+
+# Install necessary Python packages
+sudo apt install python3-venv python3-pip -y
 
 # Setup authbind for port 80
 sudo touch /etc/authbind/byport/80
@@ -94,12 +73,35 @@ fi
 
 echo "The domain name is set to: $dm_name"
 
-# Run Gunicorn in the background
-pkill gunicorn  # Kill existing Gunicorn processes
-nohup authbind gunicorn --config conf/gunicorn_config.py "${project_name}.wsgi:application" > gunicorn.log 2>&1 &
+# Create a systemd service file for Gunicorn
+service_file="/etc/systemd/system/gunicorn_$project_name.service"
 
-gunicorn_pid=$!
-echo "Gunicorn is running in the background with PID $gunicorn_pid."
+sudo bash -c "cat <<EOL > $service_file
+[Unit]
+Description=gunicorn daemon for $project_name
+After=network.target
+
+[Service]
+User=$USER
+Group=www-data
+WorkingDirectory=$repo_path
+Environment='PATH=$repo_path/django_env/bin'
+ExecStart=$repo_path/django_env/bin/gunicorn --access-logfile - --workers 3 --bind ${vps_ip}:${port_number} ${project_name}.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+EOL"
+
+# Reload systemd to recognize the new service
+sudo systemctl daemon-reload
+
+# Enable the Gunicorn service to start on boot
+sudo systemctl enable "gunicorn_$project_name.service"
+
+# Start the Gunicorn service
+sudo systemctl start "gunicorn_$project_name.service"
+
+echo "Gunicorn service for $project_name has been created and started."
 
 # Create and test Nginx configuration
 nginx_config="/etc/nginx/sites-available/$project_name"
