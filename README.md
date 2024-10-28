@@ -7,8 +7,13 @@
 
 - You can download the installation script for Django and Gunicorn using the following command:
 
+## Ubuntu
 ```bash
 wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/djang_one.sh -O django.sh && bash django.sh
+```
+## Debian
+```bash
+wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/django_one_debian.sh -O django.sh && bash django.sh
 ```
 
 # Step 2: Install SSL Certificate
