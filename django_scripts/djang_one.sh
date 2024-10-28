@@ -109,8 +109,10 @@ function get_domain_name() {
     read -p "Did you point any domain? (yes/no): " user_input
     if [[ "$user_input" == "yes" ]]; then
         read -p "Please enter the domain name: " dm_name
+        run_gunicorn
     else
         dm_name="$vps_ip"
+        run_gunicorn
     fi
 
     echo "The domain name is set to: $dm_name"
