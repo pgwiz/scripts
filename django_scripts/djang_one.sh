@@ -114,6 +114,7 @@ function get_domain_name() {
     fi
 
     echo "The domain name is set to: $dm_name"
+    run_gunicorn
 }
 
 # Function to run Gunicorn in the background
@@ -123,6 +124,7 @@ function run_gunicorn() {
 
     local gunicorn_pid=$!
     echo "Gunicorn is running in the background with PID $gunicorn_pid."
+    setup_nginx
 }
 
 # Function to create and test Nginx configuration
@@ -187,6 +189,7 @@ EOL"
         echo "Nginx configuration test failed. Please check the configuration."
         exit 1
     fi
+    echo "Setup complete."
 }
 
 # Main script execution
@@ -199,7 +202,7 @@ setup_project
 prepare_django
 create_gunicorn_config
 get_domain_name
-run_gunicorn
-setup_nginx
+#run_gunicorn
+#setup_nginx
 
 echo "Setup complete."
