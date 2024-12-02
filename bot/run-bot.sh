@@ -56,7 +56,9 @@ cd "$bot_folder" || {
 
 # Install project dependencies
 echo -e "\033[0;31mInstalling project dependencies...\033[0m"
-yarn install && npm install || {
+npm install -g yarn
+
+yarn install --network-concurrency 3 && npm install || {
   echo -e "\033[0;31mFailed to install project dependencies. Please try again.\033[0m"
   exit 1
 }
