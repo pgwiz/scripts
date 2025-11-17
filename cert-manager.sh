@@ -284,8 +284,7 @@ show_acme_challenge_menu() {
     echo ""
     print_separator
 
-    read -p "Select challenge type [1-4]: " choice
-    echo "$choice"
+    read -p "Select challenge type [1-4]: " ACME_CHOICE
 }
 
 handle_http01_challenge() {
@@ -477,7 +476,8 @@ issue_certificate_wizard() {
     fi
 
     # Select challenge type
-    local challenge_choice=$(show_acme_challenge_menu "$domain")
+    show_acme_challenge_menu "$domain"
+    local challenge_choice=$ACME_CHOICE
 
     case $challenge_choice in
         1)
@@ -1141,8 +1141,7 @@ show_main_menu() {
     echo ""
     print_separator
 
-    read -p "Select option: " choice
-    echo "$choice"
+    read -p "Select option: " MENU_CHOICE
 }
 
 show_system_info() {
@@ -1211,7 +1210,8 @@ main() {
     log INFO "Certificate Manager started (v$SCRIPT_VERSION)"
 
     while true; do
-        choice=$(show_main_menu)
+        show_main_menu
+        choice=$MENU_CHOICE
 
         case $choice in
             1)
