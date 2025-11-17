@@ -1202,6 +1202,258 @@ show_system_info() {
 }
 
 ################################################################################
+# Command-line Argument Handlers
+################################################################################
+
+show_help() {
+    cat << EOF
+Advanced SSL/TLS Certificate Manager v${SCRIPT_VERSION}
+
+Usage: $(basename "$0") [OPTIONS]
+
+OPTIONS:
+    -h, --help              Show this help message
+    -v, --version           Show version information
+    -u, --update            Update script to latest version from GitHub
+    --install               Install script to /usr/local/bin
+    --uninstall             Remove script from /usr/local/bin
+
+    --check                 Check certificate expiry (non-interactive)
+    --renew                 Renew certificates (non-interactive)
+    --list                  List all certificates (non-interactive)
+    --backup                Backup certificates (non-interactive)
+
+    --domain DOMAIN         Specify domain for operations
+    --email EMAIL           Specify email for certificate registration
+
+EXAMPLES:
+    # Run interactive menu
+    sudo cert-manager
+
+    # Update the script
+    sudo cert-manager --update
+
+    # Check certificate expiry
+    sudo cert-manager --check
+
+    # Renew all certificates
+    sudo cert-manager --renew
+
+    # List certificates
+    sudo cert-manager --list
+
+    # Install system-wide
+    sudo cert-manager --install
+
+For more information, visit: https://github.com/pgwiz/scripts
+
+EOF
+}
+
+show_version() {
+    echo "Advanced SSL/TLS Certificate Manager v${SCRIPT_VERSION}"
+    echo "Copyright (c) 2024"
+    echo "License: MIT"
+}
+
+update_script() {
+    local script_path="$0"
+    local temp_file="/tmp/cert-manager-update.sh"
+    local github_url="https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh"
+
+    log INFO "Updating Certificate Manager..."
+
+    echo -e "${CYAN}Downloading latest version...${NC}"
+
+    if wget --no-check-certificate "$github_url" -O "$temp_file" 2>/dev/null; then
+        # Verify the downloaded file is valid bash
+        if bash -n "$temp_file" 2>/dev/null; then
+            # Backup current version
+            cp "$script_path" "${script_path}.backup.$(date +%s)"
+
+            # Replace with new version
+            mv "$temp_file" "$script_path"
+            chmod +x "$script_path"
+
+            log SUCCESS "Certificate Manager updated successfully!"
+            echo -e "${GREEN}Backup saved: ${script_path}.backup.*${NC}"
+            echo -e "${YELLOW}Please restart the script to use the new version${NC}"
+            exit 0
+        else
+            log ERROR "Downloaded file has syntax errors. Update aborted."
+            rm -f "$temp_file"
+            exit 1
+        fi
+    else
+        log ERROR "Failed to download update from GitHub"
+        exit 1
+    fi
+}
+
+install_script() {
+    local script_path="$0"
+    local install_path="/usr/local/bin/cert-manager"
+
+    if [ -f "$install_path" ]; then
+        log WARNING "Certificate Manager is already installed at $install_path"
+        if ! prompt_yes_no "Overwrite existing installation?" "n"; then
+            exit 0
+        fi
+    fi
+
+    log INFO "Installing Certificate Manager to $install_path..."
+
+    cp "$script_path" "$install_path"
+    chmod +x "$install_path"
+
+    log SUCCESS "Certificate Manager installed successfully!"
+    echo -e "${GREEN}You can now run: ${BOLD}sudo cert-manager${NC}"
+    exit 0
+}
+
+uninstall_script() {
+    local install_path="/usr/local/bin/cert-manager"
+
+    if [ ! -f "$install_path" ]; then
+        log ERROR "Certificate Manager is not installed at $install_path"
+        exit 1
+    fi
+
+    if prompt_yes_no "Are you sure you want to uninstall Certificate Manager?" "n"; then
+        rm -f "$install_path"
+        log SUCCESS "Certificate Manager uninstalled successfully"
+    else
+        echo "Uninstall cancelled"
+    fi
+    exit 0
+}
+
+non_interactive_check() {
+    echo -e "${BOLD}Certificate Expiry Status${NC}\n"
+
+    if [ ! -d "$CERT_DIR/live" ]; then
+        echo "No certificates found"
+        exit 0
+    fi
+
+    local warn_count=0
+    local critical_count=0
+
+    for cert_dir in "$CERT_DIR/live"/*; do
+        if [ -d "$cert_dir" ] && [ "$(basename "$cert_dir")" != "README" ]; then
+            local domain=$(basename "$cert_dir")
+            local cert_file="$cert_dir/fullchain.pem"
+
+            if [ -f "$cert_file" ]; then
+                local expiry_date=$(openssl x509 -in "$cert_file" -noout -enddate | cut -d= -f2)
+                local expiry_epoch=$(date -d "$expiry_date" +%s)
+                local current_epoch=$(date +%s)
+                local days_left=$(( ($expiry_epoch - $current_epoch) / 86400 ))
+
+                if [ $days_left -lt 0 ]; then
+                    echo -e "${RED}EXPIRED:${NC} $domain (expired $((days_left * -1)) days ago)"
+                    ((critical_count++))
+                elif [ $days_left -lt 7 ]; then
+                    echo -e "${RED}CRITICAL:${NC} $domain ($days_left days left)"
+                    ((critical_count++))
+                elif [ $days_left -lt 30 ]; then
+                    echo -e "${YELLOW}WARNING:${NC} $domain ($days_left days left)"
+                    ((warn_count++))
+                else
+                    echo -e "${GREEN}OK:${NC} $domain ($days_left days left)"
+                fi
+            fi
+        fi
+    done
+
+    echo ""
+    if [ $critical_count -gt 0 ]; then
+        echo -e "${RED}Critical: $critical_count certificate(s) need immediate attention${NC}"
+        exit 2
+    elif [ $warn_count -gt 0 ]; then
+        echo -e "${YELLOW}Warning: $warn_count certificate(s) expiring soon${NC}"
+        exit 1
+    else
+        echo -e "${GREEN}All certificates are valid${NC}"
+        exit 0
+    fi
+}
+
+non_interactive_renew() {
+    log INFO "Running certificate renewal..."
+
+    certbot renew --quiet
+
+    if [ $? -eq 0 ]; then
+        log SUCCESS "Certificate renewal completed"
+
+        # Reload web servers
+        systemctl reload nginx 2>/dev/null || systemctl reload apache2 2>/dev/null
+
+        exit 0
+    else
+        log ERROR "Certificate renewal failed"
+        exit 1
+    fi
+}
+
+non_interactive_list() {
+    if [ ! -d "$CERT_DIR/live" ]; then
+        echo "No certificates found"
+        exit 0
+    fi
+
+    printf "%-40s %-15s %-12s %s\n" "Domain" "Expires" "Days Left" "Status"
+    echo "--------------------------------------------------------------------------------"
+
+    for cert_dir in "$CERT_DIR/live"/*; do
+        if [ -d "$cert_dir" ] && [ "$(basename "$cert_dir")" != "README" ]; then
+            local domain=$(basename "$cert_dir")
+            local cert_file="$cert_dir/fullchain.pem"
+
+            if [ -f "$cert_file" ]; then
+                local expiry_date=$(openssl x509 -in "$cert_file" -noout -enddate | cut -d= -f2)
+                local expiry_epoch=$(date -d "$expiry_date" +%s)
+                local current_epoch=$(date +%s)
+                local days_left=$(( ($expiry_epoch - $current_epoch) / 86400 ))
+
+                local status="Valid"
+                if [ $days_left -lt 0 ]; then
+                    status="Expired"
+                elif [ $days_left -lt 30 ]; then
+                    status="Expiring"
+                fi
+
+                printf "%-40s %-15s %-12s %s\n" \
+                    "$domain" \
+                    "$(date -d "$expiry_date" +%Y-%m-%d)" \
+                    "$days_left" \
+                    "$status"
+            fi
+        fi
+    done
+    exit 0
+}
+
+non_interactive_backup() {
+    local backup_file="$BACKUP_DIR/cert-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+
+    log INFO "Creating certificate backup..."
+
+    tar -czf "$backup_file" -C /etc letsencrypt 2>/dev/null
+
+    if [ $? -eq 0 ]; then
+        log SUCCESS "Backup created: $backup_file"
+        local size=$(du -h "$backup_file" | cut -f1)
+        echo "Backup size: $size"
+        exit 0
+    else
+        log ERROR "Backup failed"
+        exit 1
+    fi
+}
+
+################################################################################
 # Main Loop
 ################################################################################
 
@@ -1277,5 +1529,68 @@ main() {
     done
 }
 
-# Run main function
-main
+################################################################################
+# Argument Parsing and Entry Point
+################################################################################
+
+# Parse command-line arguments
+if [ $# -eq 0 ]; then
+    # No arguments, run interactive mode
+    main
+else
+    # Parse arguments
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -v|--version)
+                show_version
+                exit 0
+                ;;
+            -u|--update)
+                check_root
+                update_script
+                ;;
+            --install)
+                check_root
+                install_script
+                ;;
+            --uninstall)
+                check_root
+                uninstall_script
+                ;;
+            --check)
+                check_root
+                non_interactive_check
+                ;;
+            --renew)
+                check_root
+                non_interactive_renew
+                ;;
+            --list)
+                check_root
+                non_interactive_list
+                ;;
+            --backup)
+                check_root
+                non_interactive_backup
+                ;;
+            --domain)
+                shift
+                DOMAIN_ARG="$1"
+                ;;
+            --email)
+                shift
+                EMAIL_ARG="$1"
+                ;;
+            *)
+                echo "Unknown option: $1"
+                echo "Use --help for usage information"
+                exit 1
+                ;;
+        esac
+        shift
+    done
+fi
