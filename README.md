@@ -27,8 +27,7 @@ Professional-grade scripts for SSL/TLS certificate management, web server config
 ### Quick Start
 
 ```bash
-# Download and run the certificate manager
-wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O cert-manager.sh && sudo bash cert-manager.sh
+wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O cm.sh && sudo bash cm.sh
 ```
 
 ### Installation Steps
@@ -36,34 +35,27 @@ wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs
 #### Option 1: One-Line Installation (Recommended)
 
 ```bash
-# Download and execute directly
-wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O cert-manager.sh && sudo bash cert-manager.sh
+wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O cm.sh && sudo bash cm.sh
 ```
 
 #### Option 2: Manual Installation
 
 ```bash
-# Download the script
-wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O cert-manager.sh
-
-# Make it executable
-chmod +x cert-manager.sh
-
-# Run with sudo
-sudo ./cert-manager.sh
+wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O cm.sh
+chmod +x cm.sh
+sudo ./cm.sh
 ```
 
 #### Option 3: System-Wide Installation
 
 ```bash
-# Download and install to /usr/local/bin
-sudo wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O /usr/local/bin/cert-manager
+sudo wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O /usr/local/bin/cm && sudo chmod +x /usr/local/bin/cm
+```
 
-# Make executable
-sudo chmod +x /usr/local/bin/cert-manager
+Then run from anywhere:
 
-# Run from anywhere
-sudo cert-manager
+```bash
+sudo cm
 ```
 
 ---
@@ -120,8 +112,7 @@ Firewall: Allow port 80 and 443
 **Example:**
 ```
 Domain: *.example.com
-You'll need to add a TXT record:
-_acme-challenge.example.com → "random-verification-string"
+Add TXT record: _acme-challenge.example.com → "random-verification-string"
 ```
 
 **Wildcard Certificate Example:**
@@ -217,7 +208,7 @@ Challenge: DNS-01 (required for wildcards)
 
 ```bash
 # Step 1: Issue certificate
-sudo cert-manager
+sudo cm
 # Select: 1) Issue New Certificate
 # Enter domain: example.com
 # Enter email: admin@example.com
@@ -226,49 +217,39 @@ sudo cert-manager
 
 # Step 2: Setup auto-renewal
 # Select: 6) Setup Auto-Renewal
-
-# Done! Certificate will auto-renew.
 ```
 
 ### Scenario 2: Wildcard Certificate
 
 ```bash
-# Step 1: Issue wildcard certificate
-sudo cert-manager
+sudo cm
 # Select: 1) Issue New Certificate
 # Enter domain: *.example.com
 # Email: admin@example.com
 # Challenge: DNS-01 (automatically selected)
 # Follow DNS TXT record instructions
 # Wait for DNS propagation
-# Certificate issued for *.example.com
 ```
 
 ### Scenario 3: Multiple Domains
 
 ```bash
-# Issue certificates for multiple domains
-# Run the wizard for each domain:
-# - example.com
-# - api.example.com
-# - admin.example.com
-
-# Or use certbot directly for multiple domains:
+# Run the wizard for each domain, or use certbot directly:
 certbot certonly --nginx -d example.com -d www.example.com -d api.example.com
 ```
 
 ### Scenario 4: Migration from Existing Server
 
 ```bash
-# On old server - Create backup
-sudo cert-manager
+# On old server — create backup
+sudo cm
 # Select: 7) Backup Certificates
 
 # Copy backup to new server
 scp /var/backups/cert-manager/cert-backup-*.tar.gz newserver:/tmp/
 
-# On new server - Restore
-sudo cert-manager
+# On new server — restore
+sudo cm
 # Select: 8) Restore Certificates
 # Enter backup path: /tmp/cert-backup-*.tar.gz
 ```
@@ -287,50 +268,33 @@ sudo cert-manager
    dig +short example.com
    nslookup example.com
    ```
-
-2. Wait for DNS to propagate (can take up to 48 hours)
-
+2. Wait for DNS propagation (up to 48 hours)
 3. Verify your domain registrar's DNS settings
-
 4. Use online tools: https://www.whatsmydns.net/
 
 ### HTTP-01 Challenge Failed
 
 **Problem:** "Challenge validation failed"
 
-**Common causes and fixes:**
-
 1. **Port 80 blocked:**
    ```bash
-   # Check firewall
-   sudo ufw status
-
-   # Allow port 80
    sudo ufw allow 80/tcp
    sudo ufw allow 443/tcp
    ```
 
 2. **Web server not running:**
    ```bash
-   # Check nginx status
-   sudo systemctl status nginx
-
-   # Start nginx
    sudo systemctl start nginx
    ```
 
 3. **Incorrect web server configuration:**
    ```bash
-   # Test nginx config
    sudo nginx -t
-
-   # View error logs
    sudo tail -f /var/log/nginx/error.log
    ```
 
 4. **Domain not pointing to server:**
    ```bash
-   # Verify DNS
    curl -v http://example.com/.well-known/acme-challenge/test
    ```
 
@@ -338,31 +302,19 @@ sudo cert-manager
 
 **Problem:** "DNS TXT record not found"
 
-**Solutions:**
-
 1. **Verify TXT record:**
    ```bash
    dig TXT _acme-challenge.example.com
    ```
-
-2. **Wait for DNS propagation:**
-   - Can take 5-10 minutes
-   - Check multiple DNS servers
-
-3. **Check DNS provider:**
-   - Some providers have propagation delays
-   - CloudFlare is typically fastest (1-2 minutes)
+2. Wait for DNS propagation (5–10 minutes; CloudFlare is typically 1–2 minutes)
 
 ### Certificate Not Renewing
 
 **Problem:** Auto-renewal not working
 
-**Debug steps:**
-
 1. **Check timer status:**
    ```bash
    sudo systemctl status cert-renewal.timer
-   sudo systemctl list-timers | grep cert-renewal
    ```
 
 2. **Test renewal manually:**
@@ -378,7 +330,7 @@ sudo cert-manager
 
 4. **Re-setup auto-renewal:**
    ```bash
-   sudo cert-manager
+   sudo cm
    # Select: 6) Setup Auto-Renewal
    ```
 
@@ -386,30 +338,21 @@ sudo cert-manager
 
 **Problem:** Nginx/Apache not loading SSL config
 
-**Solutions:**
-
 1. **Test configuration:**
    ```bash
-   # Nginx
    sudo nginx -t
-
-   # Apache
    sudo apache2ctl configtest
    ```
 
 2. **Check if site is enabled:**
    ```bash
-   # Nginx
    ls -la /etc/nginx/sites-enabled/
-
-   # Apache
    a2ensite example.com
    ```
 
 3. **Reload web server:**
    ```bash
    sudo systemctl reload nginx
-   # or
    sudo systemctl reload apache2
    ```
 
@@ -425,29 +368,18 @@ The script generates production-ready Nginx configurations with:
 - **Modern TLS protocols** (TLS 1.2, 1.3)
 - **Strong cipher suites**
 - **OCSP stapling**
-- **Security headers:**
-  - HSTS (HTTP Strict Transport Security)
-  - X-Frame-Options
-  - X-Content-Type-Options
-  - X-XSS-Protection
-  - Referrer-Policy
+- **Security headers:** HSTS, X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy
 - **Optimized SSL session caching**
 - **Backend proxy configuration**
 - **Static file serving with caching**
 
-**Configuration location:** `/etc/nginx/sites-available/yourdomain.com`
+**Config location:** `/etc/nginx/sites-available/yourdomain.com`
 
 ### Apache Configuration (Generated by Script)
 
-Includes:
+Includes SSL/TLS encryption, HTTP to HTTPS redirect, security headers, proxy configuration, and logging.
 
-- **SSL/TLS encryption**
-- **HTTP to HTTPS redirect**
-- **Security headers**
-- **Proxy configuration**
-- **Logging**
-
-**Configuration location:** `/etc/apache2/sites-available/yourdomain.com.conf`
+**Config location:** `/etc/apache2/sites-available/yourdomain.com.conf`
 
 ---
 
@@ -456,26 +388,21 @@ Includes:
 ### 1. Regular Updates
 
 ```bash
-# Update certbot
 sudo apt update && sudo apt upgrade certbot
-
-# Keep the script updated
-wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O /usr/local/bin/cert-manager
+sudo wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O /usr/local/bin/cm
 ```
 
 ### 2. Monitor Certificate Expiry
 
 ```bash
-# Check expiry dates regularly
-sudo cert-manager
+sudo cm
 # Select: 9) Check Certificate Expiry
 ```
 
 ### 3. Backup Certificates
 
 ```bash
-# Monthly backups recommended
-sudo cert-manager
+sudo cm
 # Select: 7) Backup Certificates
 
 # Store backups off-server
@@ -485,27 +412,21 @@ scp /var/backups/cert-manager/*.tar.gz backup-server:/backups/
 ### 4. Test SSL Configuration
 
 ```bash
-# Test your SSL setup
-sudo cert-manager
+sudo cm
 # Select: 10) Test SSL Configuration
-
-# Or use online tools:
-# https://www.ssllabs.com/ssltest/
+# Or: https://www.ssllabs.com/ssltest/
 ```
 
 ### 5. Limit Certificate Requests
 
-- Let's Encrypt has rate limits (50 certificates per domain per week)
-- Use `--staging` flag for testing
-- The script automatically handles this
+- Let's Encrypt rate limits: 50 certificates per domain per week
+- Use `--staging` flag for testing (script handles this automatically)
 
 ### 6. Secure Private Keys
 
 ```bash
-# Check private key permissions
-ls -la /etc/letsencrypt/live/*/privkey.pem
-
 # Should be: -rw-r----- root root
+ls -la /etc/letsencrypt/live/*/privkey.pem
 ```
 
 ---
@@ -522,8 +443,8 @@ ls -la /etc/letsencrypt/live/*/privkey.pem
 │       ├── privkey.pem      # Private key
 │       ├── cert.pem         # Domain certificate
 │       └── chain.pem        # Intermediate certificates
-├── archive/                  # Certificate history
-└── renewal/                  # Renewal configuration
+├── archive/                 # Certificate history
+└── renewal/                 # Renewal configuration
 ```
 
 ### Script Configuration
@@ -537,50 +458,42 @@ ls -la /etc/letsencrypt/live/*/privkey.pem
 ### Web Server Configurations
 
 ```
-# Nginx
-/etc/nginx/sites-available/  # Available sites
-/etc/nginx/sites-enabled/    # Enabled sites
-
-# Apache
-/etc/apache2/sites-available/
-/etc/apache2/sites-enabled/
+/etc/nginx/sites-available/       # Nginx available sites
+/etc/nginx/sites-enabled/         # Nginx enabled sites
+/etc/apache2/sites-available/     # Apache available sites
+/etc/apache2/sites-enabled/       # Apache enabled sites
 ```
 
 ---
 
 ## 🐧 Django Deployment Scripts
 
-### Ubuntu - Django with Gunicorn
+### Ubuntu — Django with Gunicorn
 
 ```bash
-wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/djang_one.sh -O django.sh && bash django.sh
+wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/djang_one.sh -O dj.sh && bash dj.sh
 ```
 
-**Features:**
-- Automated Django setup
-- Gunicorn configuration
-- Systemd service creation
-- Nginx configuration
-- Static file serving
+**Features:** Automated Django setup, Gunicorn configuration, systemd service creation, Nginx configuration, static file serving.
 
-### Debian - Django with Gunicorn
+### Debian — Django with Gunicorn
 
 ```bash
-wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/django_one_debian.sh -O django.sh && bash django.sh
+wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/django_one_debian.sh -O dj.sh && bash dj.sh
 ```
 
 ### Manual SSL Installation (Legacy)
 
-**Note:** Use the Advanced Certificate Manager instead for better features.
+> **Note:** Use the Advanced Certificate Manager instead for better features.
 
 ```bash
-wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/domain_ssl.sh -O ssl_cert.sh && bash ssl_cert.sh
+wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/domain_ssl.sh -O ssl.sh && bash ssl.sh
 ```
 
 ### Git Pull Script
 
 ```bash
-wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/git_pull.sh -O git_pull.sh && bash git_pull.sh
+wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/git_pull.sh -O gp.sh && bash gp.sh
 ```
 
 ---
@@ -591,27 +504,20 @@ wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs
 
 ```bash
 # Step 1: Deploy Django application (Ubuntu)
-wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/djang_one.sh -O django.sh && bash django.sh
+wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/django_scripts/djang_one.sh -O dj.sh && bash dj.sh
 
 # Step 2: Install and configure SSL
-wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O cert-manager.sh && sudo bash cert-manager.sh
-
+wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O cm.sh && sudo bash cm.sh
 # In the Certificate Manager:
-# 1) Issue New Certificate
-#    - Enter your domain
-#    - Select HTTP-01 challenge
-#    - Configure web server: Yes
-#
+# 1) Issue New Certificate → enter domain → HTTP-01 → configure web server: Yes
 # 6) Setup Auto-Renewal
-#    - Automatic daily renewal checks
-#
 # 0) Exit
 
 # Step 3: Verify deployment
 curl -I https://yourdomain.com
 
 # Step 4: Test SSL
-# Visit: https://www.ssllabs.com/ssltest/analyze.html?d=yourdomain.com
+# https://www.ssllabs.com/ssltest/analyze.html?d=yourdomain.com
 ```
 
 ---
@@ -621,56 +527,32 @@ curl -I https://yourdomain.com
 ### Logs
 
 ```bash
-# Certificate Manager logs
 sudo tail -f /var/log/cert-manager/cert-manager.log
-
-# Let's Encrypt logs
 sudo tail -f /var/log/letsencrypt/letsencrypt.log
-
-# Nginx logs
 sudo tail -f /var/log/nginx/error.log
 sudo tail -f /var/log/nginx/access.log
-
-# Apache logs
 sudo tail -f /var/log/apache2/error.log
 ```
 
 ### Useful Commands
 
 ```bash
-# List all certificates
-sudo certbot certificates
-
-# Test renewal
-sudo certbot renew --dry-run
-
-# Revoke certificate
+sudo certbot certificates          # List all certificates
+sudo certbot renew --dry-run       # Test renewal
 sudo certbot revoke --cert-name example.com
-
-# Delete certificate
 sudo certbot delete --cert-name example.com
-
-# Check web server status
 sudo systemctl status nginx
-sudo systemctl status apache2
-
-# Reload web server
 sudo systemctl reload nginx
 sudo systemctl reload apache2
 ```
 
-### Let's Encrypt Documentation
+### Resources
 
-- Official Docs: https://letsencrypt.org/docs/
+- Let's Encrypt Docs: https://letsencrypt.org/docs/
 - Rate Limits: https://letsencrypt.org/docs/rate-limits/
 - Challenge Types: https://letsencrypt.org/docs/challenge-types/
-- Staging Environment: https://letsencrypt.org/docs/staging-environment/
-
-### SSL Testing Tools
-
 - SSL Labs: https://www.ssllabs.com/ssltest/
 - SSL Checker: https://www.sslshopper.com/ssl-checker.html
-- Certificate Decoder: https://www.sslshopper.com/certificate-decoder.html
 
 ---
 
@@ -695,11 +577,11 @@ sudo systemctl reload apache2
 
 ## 📄 License
 
-MIT License - Free to use and modify
+MIT License — Free to use and modify
 
 ## 🤝 Contributing
 
-Found a bug or want to contribute? Issues and pull requests are welcome!
+Found a bug or want to contribute? Issues and pull requests welcome!
 
 Repository: https://github.com/pgwiz/scripts
 
@@ -707,14 +589,12 @@ Repository: https://github.com/pgwiz/scripts
 
 ## ⚡ Quick Reference
 
-### Most Common Commands
-
 ```bash
-# Install Certificate Manager
-wget --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O cert-manager.sh && sudo bash cert-manager.sh
+# Install & run Certificate Manager
+wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/cert-manager.sh -O cm.sh && sudo bash cm.sh
 
-# Run Certificate Manager
-sudo cert-manager
+# Run (after system-wide install)
+sudo cm
 
 # Test renewal
 sudo certbot renew --dry-run
@@ -722,7 +602,7 @@ sudo certbot renew --dry-run
 # List certificates
 sudo certbot certificates
 
-# Check nginx
+# Check & reload nginx
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
