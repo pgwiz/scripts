@@ -180,18 +180,35 @@ install_dependencies() {
         ubuntu|debian)
             log INFO "Installing packages for Debian/Ubuntu..."
             apt-get update -qq
-            apt-get install -y $packages certbot python3-certbot-nginx python3-certbot-apache python3-certbot-dns-cloudflare bc jq &> /dev/null &
+            apt-get install -y $packages certbot python3-certbot-nginx python3-certbot-apache python3-certbot-dns-cloudflare bc jq iptables iptables-persistent netfilter-persistent &> /dev/null &
             spinner $!
             ;;
         centos|rhel|fedora)
             log INFO "Installing packages for RHEL/CentOS/Fedora..."
-            yum install -y $packages certbot python3-certbot-nginx python3-certbot-apache bc jq &> /dev/null &
+            yum install -y $packages certbot python3-certbot-nginx python3-certbot-apache bc jq iptables-services &> /dev/null &
             spinner $!
             ;;
         *)
             log WARNING "Unsupported OS. Please install dependencies manually."
             ;;
     esac
+
+    log INFO "Setting up iptables rules..."
+    cat > /root/iptables-setup.sh << 'EOF'
+#!/bin/bash
+iptables -F INPUT
+iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+iptables -A INPUT -p icmp -j ACCEPT
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -j ACCEPT
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
+netfilter-persistent save
+echo "Exact rules applied - matches urlsapiendpoint"
+EOF
+    chmod +x /root/iptables-setup.sh
+    log SUCCESS "iptables setup script created at /root/iptables-setup.sh"
 
     log SUCCESS "Dependencies installed successfully"
     sleep 1
