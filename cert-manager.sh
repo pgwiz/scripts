@@ -78,7 +78,7 @@ spinner() {
     local pid=$1
     local delay=0.1
     local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
-    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+    while [ "$(ps a | awk '{print $1}' | grep -w $pid)" ]; do
         local temp=${spinstr#?}
         printf " [%c]  " "$spinstr"
         local spinstr=$temp${spinstr%"$temp"}
@@ -169,7 +169,6 @@ detect_web_server() {
 }
 
 install_dependencies() {
-    print_header
     echo -e "${BOLD}Installing System Dependencies...${NC}\n"
 
     detect_os
@@ -180,7 +179,7 @@ install_dependencies() {
         ubuntu|debian)
             log INFO "Installing packages for Debian/Ubuntu..."
             apt-get update -qq
-            apt-get install -y $packages certbot python3-certbot-nginx python3-certbot-apache python3-certbot-dns-cloudflare bc jq iptables iptables-persistent netfilter-persistent &> /dev/null &
+            DEBIAN_FRONTEND=noninteractive apt-get install -y $packages certbot python3-certbot-nginx python3-certbot-apache python3-certbot-dns-cloudflare bc jq iptables iptables-persistent netfilter-persistent &> /dev/null &
             spinner $!
             ;;
         centos|rhel|fedora)
@@ -1483,9 +1482,6 @@ main() {
     while true; do
         show_main_menu
         choice=$MENU_CHOICE
-        # Debug: show what was entered
-        echo "DEBUG: You entered [$choice] (length: ${#choice})" >&2
-
         case "$choice" in
             1)
                 issue_certificate_wizard
