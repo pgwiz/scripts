@@ -609,3 +609,109 @@ sudo nginx -t && sudo systemctl reload nginx
 ---
 
 **Need Help?** Check the troubleshooting section or view the logs for detailed error messages.
+
+## 💾 Advanced RAM Disk Creator
+
+**Professional-grade script for creating and managing tmpfs RAM disks**
+
+### Features
+
+- ✅ **Interactive Menu Interface** - Easy-to-use terminal UI for creating and managing disks
+- ✅ **Size Validation & Safety Caps** - Prevents system crashes by validating requested size against available physical RAM
+- ✅ **Persistence Management** - Automatically handles `fstab` or `systemd` entries for auto-mounting on boot
+- ✅ **State Tracking** - Maintains a database of managed RAM disks for easy listing and removal
+- ✅ **Dry-run Mode** - See what actions will be performed without actually executing them
+- ✅ **JSON Output** - Machine-readable output for programmatic usage
+- ✅ **Comprehensive Error Handling** - Validates inputs, mount points, and permissions gracefully
+
+### Quick Start
+
+```bash
+wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/ramdisk.sh -O ramdisk.sh && chmod +x ramdisk.sh
+sudo ./memman.sh
+```
+
+### Command Line Usage
+
+The script can be used interactively (by running without arguments) or via command line flags for automation.
+
+**Create a RAM disk:**
+```bash
+sudo ./memman.sh ramdisk --create --size 1G --mount /mnt/fastcache --persist systemd
+```
+
+**List active managed RAM disks:**
+```bash
+./memman.sh ramdisk --list
+```
+
+**Remove a RAM disk (with cleanup):**
+```bash
+sudo ./memman.sh ramdisk --remove --mount /mnt/fastcache
+```
+
+### Configuration Options
+
+You can customize defaults by creating a configuration file at `/etc/ramdisk-creator.conf`:
+
+```bash
+DEFAULT_SIZE="512M"
+DEFAULT_MOUNT_PREFIX="/mnt/ramdisk"
+SAFETY_CAP_PERCENT=50
+DEFAULT_PERMS="1777"
+DEFAULT_PERSIST="none"
+```
+
+## 💽 Advanced Swap & ZRAM Manager
+
+**Professional-grade script for creating and managing swapfiles, swap partitions, and ZRAM devices**
+
+### Features
+
+- ✅ **Three Swap Backends** - Supports Swapfiles, Swap Partitions, and ZRAM (compressed in-RAM swap)
+- ✅ **Intelligent Size Logic** - Calculates recommended swap sizes based on physical RAM
+- ✅ **Btrfs Support** - Safely provisions swapfiles on Btrfs by disabling copy-on-write
+- ✅ **ZRAM Persistence** - Integrates with systemd to re-create ZRAM swaps on boot
+- ✅ **Safe Swap Removal** - Checks memory availability to ensure `swapoff` won't trigger OOM
+- ✅ **Kernel Tuning Presets** - Offers predefined tunings (server, desktop, aggressive) for `swappiness` and related settings
+- ✅ **Live Monitor Mode** - Built-in `watch` UI to monitor swap and RAM usage in real-time
+- ✅ **Multi-Swap State Tracking** - Safely manage multiple layered swaps across your system
+
+### Quick Start
+
+```bash
+wget -q --no-check-certificate https://raw.githubusercontent.com/pgwiz/scripts/refs/heads/master/swapman.sh -O swapman.sh && chmod +x swapman.sh
+sudo ./memman.sh
+```
+
+### Command Line Usage
+
+**Create a ZRAM device (recommended for low-memory servers):**
+```bash
+sudo ./memman.sh swap --create --backend zram --size 1G
+```
+
+**Create a traditional swapfile:**
+```bash
+sudo ./memman.sh swap --create --backend file --path /swapfile --size 2G
+```
+
+**Apply Server Kernel Tuning:**
+```bash
+sudo ./memman.sh swap --tune server
+```
+
+**Watch Swap Usage Live:**
+```bash
+./memman.sh swap --watch --interval 2
+```
+
+**List active managed swaps:**
+```bash
+./memman.sh swap --list
+```
+
+**Remove a swap (safely):**
+```bash
+sudo ./memman.sh swap --remove --path /swapfile
+```
